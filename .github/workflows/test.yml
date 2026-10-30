@@ -51,10 +51,11 @@ jobs:
         shell: pwsh
         env:
           RESULT_VERSION: ${{ steps.historical.outputs.version }}
+          RESULT_PATH: ${{ steps.historical.outputs.path }}
         run: |
           if ($env:RESULT_VERSION -ne 'v0.14.8') { throw 'wrong historical output version' }
           $resolved = (Get-Command ingitdb).Source
-          if (-not $resolved.StartsWith($env:RUNNER_TEMP, [StringComparison]::OrdinalIgnoreCase)) { throw "unexpected binary: $resolved" }
+          if ($resolved -ne $env:RESULT_PATH) { throw "unexpected binary: $resolved" }
           & ingitdb --help
           if ($LASTEXITCODE -ne 0) { throw 'historical CLI failed' }
       - name: Verify historical platform checksum manifests
@@ -66,7 +67,9 @@ jobs:
         shell: pwsh
         env:
           RESULT_VERSION: ${{ steps.split_manifest.outputs.version }}
+          RESULT_PATH: ${{ steps.split_manifest.outputs.path }}
         run: |
           if ($env:RESULT_VERSION -ne 'v0.24.1') { throw 'wrong split-manifest output version' }
+          if ((Get-Command ingitdb).Source -ne $env:RESULT_PATH) { throw 'wrong split-manifest binary on PATH' }
           & ingitdb --help
           if ($LASTEXITCODE -ne 0) { throw 'split-manifest CLI failed' }

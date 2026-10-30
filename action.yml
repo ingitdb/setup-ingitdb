@@ -11,6 +11,9 @@ outputs:
   version:
     description: Installed release tag
     value: ${{ steps.install.outputs.version }}
+  path:
+    description: Installed binary path
+    value: ${{ steps.install.outputs.path }}
 runs:
   using: composite
   steps:

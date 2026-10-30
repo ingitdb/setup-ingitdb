@@ -52,4 +52,5 @@ try {
     if ($osName -ne 'windows') { & chmod +x (Join-Path $destination $name); if ($LASTEXITCODE -ne 0) { throw 'chmod failed' } }
     Add-Content -Path $env:GITHUB_PATH -Value $destination
     Add-Content -Path $env:GITHUB_OUTPUT -Value "version=$version"
+    Add-Content -Path $env:GITHUB_OUTPUT -Value "path=$(Join-Path $destination $name)"
 } finally { Remove-Item -LiteralPath $tmp -Recurse -Force -ErrorAction SilentlyContinue }
