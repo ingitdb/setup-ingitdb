@@ -8,7 +8,7 @@ Linux and macOS support amd64 and arm64; Windows supports amd64 and arm64 where 
 
 ```yaml
 - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-- uses: ingitdb/setup-ingitdb@1ca878133967c86461feca36195c008e70514dd3
+- uses: ingitdb/setup-ingitdb@00db320cc4c72470931f97ba2b401ca8f721e1a4
   with:
     version: v0.70.4
 - run: ingitdb --version
