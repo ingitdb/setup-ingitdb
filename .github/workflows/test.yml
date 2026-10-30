@@ -58,11 +58,15 @@ jobs:
           & ingitdb --help
           if ($LASTEXITCODE -ne 0) { throw 'historical CLI failed' }
       - name: Verify historical platform checksum manifests
+        id: split_manifest
         uses: ./
         with:
           version: v0.24.1
-      - name: Check split-manifest release version
+      - name: Check split-manifest release command
         shell: pwsh
+        env:
+          RESULT_VERSION: ${{ steps.split_manifest.outputs.version }}
         run: |
-          $reported = & ingitdb --version
-          if ($LASTEXITCODE -ne 0 -or $reported -notmatch '(^|[^0-9])0\.24\.1([^0-9]|$)') { throw "wrong split-manifest version: $reported" }
+          if ($env:RESULT_VERSION -ne 'v0.24.1') { throw 'wrong split-manifest output version' }
+          & ingitdb --help
+          if ($LASTEXITCODE -ne 0) { throw 'split-manifest CLI failed' }
