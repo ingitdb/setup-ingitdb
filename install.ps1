@@ -5,18 +5,26 @@ $independent = $env:SETUP_EXPECTED_SHA256
 if ($independent -and $independent -notmatch '^[0-9a-fA-F]{64}$') { throw 'expected-sha256 must contain 64 hexadecimal characters' }
 $osName = switch ($env:RUNNER_OS) { 'Linux' { 'linux' } 'macOS' { 'darwin' } 'Windows' { 'windows' } default { throw "unsupported runner OS: $env:RUNNER_OS" } }
 $arch = switch ($env:RUNNER_ARCH) { 'X64' { 'amd64' } 'ARM64' { 'arm64' } default { throw "unsupported runner architecture: $env:RUNNER_ARCH" } }
-if ($osName -eq 'windows' -and $arch -eq 'arm64') { throw 'InGitDB does not publish a Windows arm64 archive' }
 $number = $version.Substring(1)
 $extension = if ($osName -eq 'windows') { 'zip' } else { 'tar.gz' }
-$archive = "ingitdb_${number}_${osName}_${arch}.${extension}"
 $base = "https://github.com/ingitdb/ingitdb-cli/releases/download/$version"
+$headers = @{ 'Accept' = 'application/vnd.github+json' }
+if ($env:SETUP_GITHUB_TOKEN) { $headers.Authorization = "Bearer $env:SETUP_GITHUB_TOKEN" }
+$release = Invoke-RestMethod -Headers $headers -Uri "https://api.github.com/repos/ingitdb/ingitdb-cli/releases/tags/$version"
+$names = @($release.assets | ForEach-Object { $_.name })
+$current = "ingitdb_${number}_${osName}_${arch}.${extension}"
+$legacy = "ingitdb-cli_${number}_${osName}_${arch}.${extension}"
+if ($names -contains $current) { $archive = $current; $checksumName = 'checksums.txt' }
+elseif ($names -contains $legacy) { $archive = $legacy; $checksumName = "ingitdb-cli_${number}_checksums.txt" }
+else { throw "no archive published for $version on $osName/$arch" }
+if ($names -notcontains $checksumName) { throw "checksum manifest missing for $version" }
 $tmp = Join-Path $env:RUNNER_TEMP ("setup-ingitdb-" + [guid]::NewGuid())
 New-Item -ItemType Directory -Path $tmp | Out-Null
 try {
     $archivePath = Join-Path $tmp $archive
     $manifestPath = Join-Path $tmp 'checksums.txt'
     Invoke-WebRequest -Uri "$base/$archive" -OutFile $archivePath
-    Invoke-WebRequest -Uri "$base/checksums.txt" -OutFile $manifestPath
+    Invoke-WebRequest -Uri "$base/$checksumName" -OutFile $manifestPath
     $entries = @(Get-Content $manifestPath | Where-Object { $_ -match "\s\*?$([regex]::Escape($archive))\s*$" })
     if ($entries.Count -ne 1) { throw "missing or duplicate checksum for $archive" }
     $expected = ($entries[0] -split '\s+')[0]

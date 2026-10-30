@@ -1,6 +1,11 @@
 param([switch]$Child, [string]$Mode, [string]$Fixture, [string]$Archive)
 $ErrorActionPreference = 'Stop'
 if ($Child) {
+    function Invoke-RestMethod {
+        param($Headers, $Uri)
+        if ($Uri -ne 'https://api.github.com/repos/ingitdb/ingitdb-cli/releases/tags/v1.2.3') { throw "unexpected API URL: $Uri" }
+        return @{ assets = @(@{name = $Archive}, @{name = 'checksums.txt'}) }
+    }
     function Invoke-WebRequest {
         param($Uri, $OutFile)
         $base = 'https://github.com/ingitdb/ingitdb-cli/releases/download/v1.2.3'

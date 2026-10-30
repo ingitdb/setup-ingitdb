@@ -18,6 +18,7 @@ runs:
       shell: pwsh
       env:
         SETUP_ACTION_PATH: ${{ github.action_path }}
+        SETUP_GITHUB_TOKEN: ${{ github.token }}
         SETUP_VERSION: ${{ inputs.version }}
         SETUP_EXPECTED_SHA256: ${{ inputs.expected-sha256 }}
       run: '& "$env:SETUP_ACTION_PATH/install.ps1"'
