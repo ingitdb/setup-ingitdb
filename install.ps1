@@ -14,7 +14,11 @@ $release = Invoke-RestMethod -Headers $headers -Uri "https://api.github.com/repo
 $names = @($release.assets | ForEach-Object { $_.name })
 $current = "ingitdb_${number}_${osName}_${arch}.${extension}"
 $legacy = "ingitdb-cli_${number}_${osName}_${arch}.${extension}"
-if ($names -contains $current) { $archive = $current; $checksumName = 'checksums.txt' }
+if ($names -contains $current) {
+    $archive = $current
+    $platformChecksums = "checksums-${osName}.txt"
+    $checksumName = if ($names -contains $platformChecksums) { $platformChecksums } else { 'checksums.txt' }
+}
 elseif ($names -contains $legacy) { $archive = $legacy; $checksumName = "ingitdb-cli_${number}_checksums.txt" }
 else { throw "no archive published for $version on $osName/$arch" }
 if ($names -notcontains $checksumName) { throw "checksum manifest missing for $version" }
