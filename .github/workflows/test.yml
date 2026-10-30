@@ -1,0 +1,75 @@
+name: Self-test
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: setup
+        uses: ./
+        with:
+          version: v0.70.4
+      - name: Verify installed CLI
+        shell: pwsh
+        env:
+          RESULT_VERSION: ${{ steps.setup.outputs.version }}
+        run: |
+          if ($env:RESULT_VERSION -ne 'v0.70.4') { throw 'wrong output version' }
+          $path = (Get-Command ingitdb).Source
+          if (-not $path.StartsWith($env:RUNNER_TEMP, [StringComparison]::OrdinalIgnoreCase)) { throw "unexpected binary: $path" }
+          $reported = & ingitdb --version
+          if ($LASTEXITCODE -ne 0 -or $reported -notmatch '(^|[^0-9])0\.70\.4([^0-9]|$)') { throw "wrong binary version: $reported" }
+      - id: wrong_digest
+        continue-on-error: true
+        uses: ./
+        with:
+          version: v0.70.4
+          expected-sha256: '0000000000000000000000000000000000000000000000000000000000000000'
+      - name: Assert failure
+        shell: pwsh
+        env:
+          OUTCOME: ${{ steps.wrong_digest.outcome }}
+        run: if ($env:OUTCOME -ne 'failure') { throw 'incorrect digest was accepted' }
+      - name: Test checksum failure reasons
+        shell: pwsh
+        run: ./test-install.ps1
+      - name: Verify historical archive naming
+        id: historical
+        uses: ./
+        with:
+          version: v0.14.8
+      - name: Check historical release command
+        shell: pwsh
+        env:
+          RESULT_VERSION: ${{ steps.historical.outputs.version }}
+          RESULT_PATH: ${{ steps.historical.outputs.path }}
+        run: |
+          if ($env:RESULT_VERSION -ne 'v0.14.8') { throw 'wrong historical output version' }
+          $resolved = (Get-Command ingitdb).Source
+          if ($resolved -ne $env:RESULT_PATH) { throw "unexpected binary: $resolved" }
+          & ingitdb --help
+          if ($LASTEXITCODE -ne 0) { throw 'historical CLI failed' }
+      - name: Verify historical platform checksum manifests
+        id: split_manifest
+        uses: ./
+        with:
+          version: v0.24.1
+      - name: Check split-manifest release command
+        shell: pwsh
+        env:
+          RESULT_VERSION: ${{ steps.split_manifest.outputs.version }}
+          RESULT_PATH: ${{ steps.split_manifest.outputs.path }}
+        run: |
+          if ($env:RESULT_VERSION -ne 'v0.24.1') { throw 'wrong split-manifest output version' }
+          if ((Get-Command ingitdb).Source -ne $env:RESULT_PATH) { throw 'wrong split-manifest binary on PATH' }
+          & ingitdb --help
+          if ($LASTEXITCODE -ne 0) { throw 'split-manifest CLI failed' }
