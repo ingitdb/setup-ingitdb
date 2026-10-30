@@ -43,14 +43,20 @@ jobs:
         shell: pwsh
         run: ./test-install.ps1
       - name: Verify historical archive naming
+        id: historical
         uses: ./
         with:
           version: v0.14.8
-      - name: Check historical release version
+      - name: Check historical release command
         shell: pwsh
+        env:
+          RESULT_VERSION: ${{ steps.historical.outputs.version }}
         run: |
-          $reported = & ingitdb --version
-          if ($LASTEXITCODE -ne 0 -or $reported -notmatch '(^|[^0-9])0\.14\.8([^0-9]|$)') { throw "wrong historical version: $reported" }
+          if ($env:RESULT_VERSION -ne 'v0.14.8') { throw 'wrong historical output version' }
+          $resolved = (Get-Command ingitdb).Source
+          if (-not $resolved.StartsWith($env:RUNNER_TEMP, [StringComparison]::OrdinalIgnoreCase)) { throw "unexpected binary: $resolved" }
+          & ingitdb --help
+          if ($LASTEXITCODE -ne 0) { throw 'historical CLI failed' }
       - name: Verify historical platform checksum manifests
         uses: ./
         with:
