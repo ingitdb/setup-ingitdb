@@ -1,6 +1,6 @@
 # setup-ingitdb
 
-[![Watch the InGitDB product video](assets/product-video.webp)](https://youtu.be/EPm44iCWGwE)
+[![Watch the InGitDB product video](assets/product-video-play.svg)](https://youtu.be/EPm44iCWGwE)
 
 [Watch the InGitDB product video](https://youtu.be/EPm44iCWGwE)
 
